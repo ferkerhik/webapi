@@ -14,6 +14,14 @@ const client = new Client({
 });
 const PORT = 3001;
 client.connect();
+client.query('Select * from users', (err, res)=>{
+    if (!err) {
+        console.log(res.rows);
+    }else{
+        console.log(err.message)
+    }
+    // client.end();
+})
 
 app.use(cors());
 app.use(express.json());
