@@ -23,6 +23,10 @@ client.query('Select * from users', (err, res)=>{
     // client.end();
 })
 
+app.post('/ping', (req, res) => {
+    res.send('pong')
+})
+
 app.use(cors());
 app.use(express.json());
 
