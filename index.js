@@ -120,12 +120,13 @@ app.delete("/:table/:ids", async (req, res) => {
     // If the 'address' table is selected, delete related data from the 'result' table based on the address name
     if (table === "address") {
       const addressResults = await Promise.all(idArray.map(id => client.query(`SELECT name FROM address WHERE ${idColumn}=$1`, [id])));
-      addressResults.forEach(async (addressResult, i) => {
+      const deletionPromises = addressResults.map((addressResult, i) => {
         if (addressResult.rows.length > 0) {
           const addressName = addressResult.rows[0].name;
-          await client.query(`DELETE FROM result WHERE garden_name=$1`, [addressName]);
+          return client.query(`DELETE FROM result WHERE garden_name=$1`, [addressName]);
         }
       });
+      await Promise.all(deletionPromises);
     }
 
     const values = idArray.map((id, i) => `$${i + 1}`).join(",");
