@@ -81,10 +81,11 @@ app.get("/:table", async (req, res) => {
   }
 });
 
-app.delete("/:table/:id", async (req, res) => {
-  const { table, id } = req.params;
+app.delete("/:table/:ids", async (req, res) => {
+  const { table, ids } = req.params;
+  const idArray = ids.split(',');
 
-  console.log(`Delete API called for ${table} with ID ${id}`);
+  console.log(`Delete API called for ${table} with IDs ${ids}`);
 
   if (table !== "users" && table !== "address" && table !== "result") {
     res.status(400).send({ status: "error", message: "Invalid table name" });
@@ -109,22 +110,28 @@ app.delete("/:table/:id", async (req, res) => {
   try {
     // If the 'users' table is selected, delete related data from the 'address' and 'result' tables
     if (table === "users") {
-      await client.query(`DELETE FROM address WHERE user_id=$1`, [id]);
-      await client.query(`DELETE FROM result WHERE user_id=$1`, [id]);
+      const userPromises = idArray.map(id => client.query(`DELETE FROM address WHERE user_id=$1`, [id]));
+      await Promise.all(userPromises);
+
+      const resultPromises = idArray.map(id => client.query(`DELETE FROM result WHERE user_id=$1`, [id]));
+      await Promise.all(resultPromises);
     }
 
     // If the 'address' table is selected, delete related data from the 'result' table based on the address name
     if (table === "address") {
-      const addressResult = await client.query(`SELECT name FROM address WHERE ${idColumn}=$1`, [id]);
-      if (addressResult.rows.length > 0) {
-        const addressName = addressResult.rows[0].name;
-        await client.query(`DELETE FROM result WHERE garden_name=$1`, [addressName]);
-      }
+      const addressResults = await Promise.all(idArray.map(id => client.query(`SELECT name FROM address WHERE ${idColumn}=$1`, [id])));
+      addressResults.forEach(async (addressResult, i) => {
+        if (addressResult.rows.length > 0) {
+          const addressName = addressResult.rows[0].name;
+          await client.query(`DELETE FROM result WHERE garden_name=$1`, [addressName]);
+        }
+      });
     }
 
+    const values = idArray.map((id, i) => `$${i + 1}`).join(",");
     const result = await client.query(
-      `DELETE FROM ${table} WHERE ${idColumn}=$1`,
-      [id]
+      `DELETE FROM ${table} WHERE ${idColumn} IN (${values})`,
+      idArray
     );
     console.log(`Data deleted from ${table}:`, result.rowCount);
     res.send({
@@ -136,6 +143,7 @@ app.delete("/:table/:id", async (req, res) => {
     res.status(500).send({ status: "error", message: error });
   }
 });
+
 
 app.get("/result/kc", async (req, res) => {
   try {
