@@ -138,17 +138,11 @@ app.delete("/:table/:ids", async (req, res) => {
       status: "success",
       message: `Deleted ${result.rowCount} row(s) from ${table}`,
     });
-  } catch((error) => {
-        if (error.response) {
-            console.log(error.response.data);   // Response body data
-            console.log(error.response.status); // HTTP status code
-            console.log(error.response.headers); // Headers returned
-        } else {
-            console.log('Error', error.message);
-        }
+  } catch (error) {
+    console.error("Error deleting data:", error);
+    res.status(500).send({ status: "error", message: error });
   }
 });
-
 
 app.get("/result/kc", async (req, res) => {
   try {
