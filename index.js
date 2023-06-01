@@ -140,6 +140,9 @@ app.delete("/:table/:ids", async (req, res) => {
     });
   } catch (error) {
     console.error("Error deleting data:", error);
+    console.log(error.response.data);   // Response body data
+    console.log(error.response.status); // HTTP status code
+    console.log(error.response.headers);// Headers returned
     res.status(500).send({ status: "error", message: error });
   }
 });
