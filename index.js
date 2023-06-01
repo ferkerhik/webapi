@@ -146,6 +146,7 @@ app.delete("/:table/:ids", async (req, res) => {
         } else {
             console.log('Error', error.message);
         }
+  }
 });
 
 
