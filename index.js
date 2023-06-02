@@ -146,6 +146,27 @@ app.delete("/:table/:ids", async (req, res) => {
   }
 });
 
+app.delete("/address/:name", async (req, res) => {
+  const { name } = req.params;
+  console.log(`Delete API called for address with name ${name}`);
+
+  try {
+    const result = await client.query(
+      `DELETE FROM address WHERE name=$1 AND garden_name=$1`,
+      [name]
+    );
+    console.log(`Data deleted from address:`, result.rowCount);
+    res.send({
+      status: "success",
+      message: `Deleted ${result.rowCount} row(s) from address`,
+    });
+  } catch (error) {
+    console.error("Error deleting data:", error);
+    res.status(500).send({ status: "error", message: error.message || 'Something went wrong' });
+  }
+});
+
+
 app.get("/result/kc", async (req, res) => {
   try {
     const result = await client.query("SELECT kc, date, time, garden_name FROM result");
