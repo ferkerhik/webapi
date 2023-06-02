@@ -151,28 +151,38 @@ app.delete("/address/:name/:garden_name", async (req, res) => {
   console.log(`Delete API called with name: ${name} and garden_name: ${garden_name}`);
 
   try {
-    const result = await client.query(
-      `DELETE FROM address WHERE name=$1 AND garden_name=$2`,
-      [name, garden_name]
-    );
-    console.log(`Data deleted from address:`, result.rowCount);
+    // Start a transaction to ensure both deletions succeed or both fail
+    await client.query('BEGIN');
 
-    if (result.rowCount === 0) {
-      res.status(404).send({
-        status: "fail",
-        message: `No rows found with name ${name} and garden_name ${garden_name}`,
-      });
-    } else {
-      res.send({
-        status: "success",
-        message: `Deleted ${result.rowCount} row(s) from address`,
-      });
-    }
+    // First, delete related rows from the "result" table
+    const resultQuery = await client.query(
+      `DELETE FROM result WHERE garden_name = $1`, 
+      [name]  // use the name from the address table as garden_name in the result table
+    );
+    console.log(`Data deleted from result:`, resultQuery.rowCount);
+
+    // Then, delete the row from the "address" table
+    const addressQuery = await client.query(
+      `DELETE FROM address WHERE name=$1`,
+      [name]
+    );
+    console.log(`Data deleted from address:`, addressQuery.rowCount);
+
+    // Commit the transaction
+    await client.query('COMMIT');
+
+    res.send({
+      status: "success",
+      message: `Deleted ${addressQuery.rowCount} row from address and ${resultQuery.rowCount} related rows from result`,
+    });
   } catch (error) {
+    // If an error occurred, roll back the transaction
+    await client.query('ROLLBACK');
     console.error("Error deleting data:", error);
     res.status(500).send({ status: "error", message: error.message });
   }
 });
+
 
 app.get("/result/kc", async (req, res) => {
   try {
