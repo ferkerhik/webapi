@@ -148,7 +148,7 @@ app.delete("/:table/:ids", async (req, res) => {
 
 app.delete("/address/:name/:garden_name", async (req, res) => {
   const { name, garden_name } = req.params;
-  console.log(`Delete API called for address with name ${name} and garden name ${garden_name}`);
+  console.log(`Delete API called with name: ${name} and garden_name: ${garden_name}`);
 
   try {
     const result = await client.query(
@@ -156,13 +156,21 @@ app.delete("/address/:name/:garden_name", async (req, res) => {
       [name, garden_name]
     );
     console.log(`Data deleted from address:`, result.rowCount);
-    res.send({
-      status: "success",
-      message: `Deleted ${result.rowCount} row(s) from address`,
-    });
+
+    if (result.rowCount === 0) {
+      res.status(404).send({
+        status: "fail",
+        message: `No rows found with name ${name} and garden_name ${garden_name}`,
+      });
+    } else {
+      res.send({
+        status: "success",
+        message: `Deleted ${result.rowCount} row(s) from address`,
+      });
+    }
   } catch (error) {
     console.error("Error deleting data:", error);
-    res.status(500).send({ status: "error", message: error.message || 'Something went wrong' });
+    res.status(500).send({ status: "error", message: error.message });
   }
 });
 
