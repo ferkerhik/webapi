@@ -146,14 +146,14 @@ app.delete("/:table/:ids", async (req, res) => {
   }
 });
 
-app.delete("/address/:name", async (req, res) => {
-  const { name } = req.params;
-  console.log(`Delete API called for address with name ${name}`);
+app.delete("/address/:name/:garden_name", async (req, res) => {
+  const { name, garden_name } = req.params;
+  console.log(`Delete API called for address with name ${name} and garden name ${garden_name}`);
 
   try {
     const result = await client.query(
-      `DELETE FROM address WHERE name=$1 AND garden_name=$1`,
-      [name]
+      `DELETE FROM address WHERE name=$1 AND garden_name=$2`,
+      [name, garden_name]
     );
     console.log(`Data deleted from address:`, result.rowCount);
     res.send({
@@ -165,7 +165,6 @@ app.delete("/address/:name", async (req, res) => {
     res.status(500).send({ status: "error", message: error.message || 'Something went wrong' });
   }
 });
-
 
 app.get("/result/kc", async (req, res) => {
   try {
